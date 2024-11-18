@@ -110,14 +110,16 @@ exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
   // const equipmentModels = await EquipmentModel.find();
 
   for (let equipmentModel of equipmentModels) {
-    equipmentModel._doc.imageUrl = await getSignedUrl(
-      myS3Client,
-      new GetObjectCommand({
-        Bucket: process.env.BUCKET_NAME,
-        Key: equipmentModel.image,
-      }),
-      { expiresIn: 3600 }
-    );
+    equipmentModel._doc.imageUrl = "null.png"
+    
+    // await getSignedUrl(
+    //   myS3Client,
+    //   new GetObjectCommand({
+    //     Bucket: process.env.BUCKET_NAME,
+    //     Key: equipmentModel.image,
+    //   }),
+    //   { expiresIn: 3600 }
+    // );
   }
 
   res.status(200).json({

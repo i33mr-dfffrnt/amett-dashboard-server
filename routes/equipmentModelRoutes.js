@@ -10,10 +10,10 @@ router
   .route("/")
   .get(equipmentModelController.getAllEquipmentModels)
   .post(
-    adminController.requireAuth,
+    // adminController.requireAuth,
     imageController.uploadImage("image"),
     imageController.resizeImage(800, 800),
-    imageController.sendImageToS3Bucket,
+    // imageController.sendImageToS3Bucket,
     equipmentModelController.createEquipmentModel
   )
   .delete(adminController.requireAuth, equipmentModelController.deleteMultiModels);

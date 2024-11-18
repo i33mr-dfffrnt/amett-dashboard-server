@@ -67,7 +67,7 @@ if (process.env.NODE_ENV === "development") {
 app.use("/auth", adminRouter);
 app.use("/equipment-types", equipmentTypeRouter); // collection
 app.use("/equipment-manufacturers", equipmentManufacturerRoutes);  
-app.use("/equipment-models", equipmentModelRoutes); // product4
+app.use("/equipment-models", equipmentModelRoutes); // product
 app.use("/quotes", quoteRoutes);
 app.use("/auctions", auctionRoutes);
 app.use("/jobs", jobRouter);
