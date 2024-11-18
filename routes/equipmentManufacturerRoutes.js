@@ -9,10 +9,10 @@ router
   .route("/")
   .get(equipmentManufacturerController.getAllEquipmentManufacturers)
   .post(
-    adminController.requireAuth,
+    // adminController.requireAuth,
     imageController.uploadImage("image"),
     imageController.resizeImage(0),
-    imageController.sendImageToS3Bucket,
+    // imageController.sendImageToS3Bucket,
     equipmentManufacturerController.createEquipmentManufacturer
   )
   .delete(adminController.requireAuth, equipmentManufacturerController.deleteMultiManufacturers);
@@ -21,10 +21,10 @@ router
   .route("/:equipmentManufacturerId")
   .get(equipmentManufacturerController.getManufacturer)
   .patch(
-    adminController.requireAuth,
+    // adminController.requireAuth,
     imageController.uploadImage("image"),
     imageController.resizeImage(0),
-    imageController.sendImageToS3Bucket,
+    // imageController.sendImageToS3Bucket,
     equipmentManufacturerController.updateManufacturer
   )
   .delete(adminController.requireAuth, equipmentManufacturerController.deleteEquipmentManufacturer);

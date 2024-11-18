@@ -15,16 +15,16 @@ const Quote = require("../models/quoteModel");
 
 exports.createEquipmentModel = catchAsyncError(async (req, res, next) => {
   const { name, description, type, manufacturer } = req.body;
-  if (!name || !description || !type || !manufacturer || !req.file?.filename) {
-    return next(new AppError("Please enter all the required fields", 400));
-  }
+  // if (!name || !description || !type || !manufacturer || !req.file?.filename) {
+  //   return next(new AppError("Please enter all the required fields", 400));
+  // }
 
   const equipmentModel = await EquipmentModel.create({
     name,
     description,
     type,
     manufacturer,
-    image: req.file.filename,
+    image: "test",
   });
 
   res.status(200).json({

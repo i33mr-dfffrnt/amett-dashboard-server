@@ -12,8 +12,7 @@ process.on("uncaughtException", (err) => {
 dotenv.config({ path: "./config.env" });
 
 const app = require("./app");
-
-const DB = process.env.DATABASE.replace("<PASSWORD>", process.env.DATABASE_PASSWORD);
+const DB = process.env.DATABASE.replace("<DATABASE_NAME>", process.env.DATABASE_NAME);
 
 mongoose
   .connect(DB, {
