@@ -19,6 +19,7 @@ const jobRouter = require("./routes/jobRoutes");
 const bidRouter = require("./routes/bidRoutes");
 const serviceRouter = require("./routes/serviceRoutes");
 const empRouter = require("./routes/empRoutes");
+const webRouter  = require("./routes/webRoutes");
 
 const jobController = require("./controllers/jobController");
 
@@ -66,6 +67,7 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use("/auth", adminRouter);
+app.use("/web", webRouter);
 app.use("/equipment-types", equipmentTypeRouter); // collection
 app.use("/equipment-manufacturers", equipmentManufacturerRoutes);  
 app.use("/equipment-models", equipmentModelRoutes); // product

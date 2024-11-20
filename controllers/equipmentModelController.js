@@ -131,30 +131,6 @@ exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
   });
 });
 
-exports.getMenu = catchAsyncError(async (req, res, next) => {
-  console.log("Fetching equipment menu...");
-
-  const queryFunctions = new QueryFunctions(
-    EquipmentType.find(),
-    req.query
-  );
-
-  // Use the corrected populate function
-  const equipmentTypesWithModels = await queryFunctions.populateModelsWithTypes(
-    EquipmentType.collection,
-    EquipmentModel.collection
-  );
-
-
-  console.log(equipmentTypesWithModels);
-
-  res.status(200).json({
-    status: "success",
-    data: equipmentTypesWithModels,
-  });
-});
-
-
 exports.getModel = catchAsyncError(async (req, res, next) => {
   const equipmentModel = await EquipmentModel.findById(req.params.equipmentModelId)
     .populate("type")

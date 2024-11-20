@@ -8,7 +8,7 @@ const router = express.Router();
 router.route("/search/:searchTerm").get(equipmentModelController.searchForEquipmentModels);
 router
   .route("/")
-  .get(equipmentModelController.getMenu)
+  .get(equipmentModelController.getAllEquipmentModels)
   .post(
     // adminController.requireAuth,
     imageController.uploadImage("image"),
