@@ -27,7 +27,8 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["https://www.amett.net", "https://amett.net", "http://localhost:3000"],
+    origin: true,
+    // origin: ["https://www.amett.net", "https://amett.net", "http://localhost:3000"],
     credentials: true,
   })
 );
