@@ -9,10 +9,10 @@ router
   .route("/")
   .get(equipmentTypeController.getAllEquipmentTypes)
   .post(
-    adminController.requireAuth,
+    // adminController.requireAuth,
     imageController.uploadImage("image"),
     imageController.resizeImage(800, 800),
-    imageController.sendImageToS3Bucket,
+    // imageController.sendImageToS3Bucket,
     equipmentTypeController.createEquipmentType
   )
   .delete(adminController.requireAuth, equipmentTypeController.deleteMultiTypes);

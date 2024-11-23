@@ -24,7 +24,10 @@ class QueryFunctions {
     console.log(queryObj);
     // 1B) Advanced filtering
     let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt|in)\b/g, (match) => `$${match}`);
+    queryStr = queryStr.replace(
+      /\b(gte|gt|lte|lt|in)\b/g,
+      (match) => `$${match}`
+    );
     console.log(queryStr);
 
     this.query.find(JSON.parse(queryStr));
@@ -60,11 +63,56 @@ class QueryFunctions {
     // const skip = (page - 1) * limit;
     // this.query.skip(skip).limit(limit)
 
-    this.queryString.limit ? (this.query = this.query.limit(this.queryString.limit)) : null;
+    this.queryString.limit
+      ? (this.query = this.query.limit(this.queryString.limit))
+      : null;
     // handling if the page number exceeds what should be
     // NOT NEEDED
     return this;
   }
+
+  async populateModelsWithTypes(modelTypesCollection, modelsCollection) {
+    const pipeline = [
+      {
+        $limit: 6 // Limit to 6 model types
+      },
+      {
+        $lookup: {
+          from: modelsCollection.collectionName,
+          let: { typeId: "$_id" },
+          pipeline: [
+            { 
+              $match: { 
+                $expr: { $eq: ["$type", "$$typeId"] } 
+              }
+            },
+            { $project: { name: 1, _id: 1 } },
+            { $limit: 3 }
+          ],
+          as: "models"
+        }
+      },
+      {
+        $project: {
+          Head: "$name",
+          headLink: { $concat: ["/products?categoryId=", { $toString: "$_id" }] },
+          sublink: {
+            $map: {
+              input: "$models",
+              as: "model",
+              in: {
+                name: "$$model.name",
+                link: { $concat: ["/product/", { $toString: "$$model._id" }] }
+              }
+            }
+          }
+        }
+      }
+    ];
+  
+    return await modelTypesCollection.aggregate(pipeline).toArray();
+  }
+
 }
 
 module.exports = QueryFunctions;

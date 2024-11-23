@@ -19,10 +19,14 @@ exports.createEquipmentManufacturer = catchAsyncError(async (req, res, next) => 
     return next(new AppError("Please enter all the required fields", 400));
   }
 
+ 
+
   const equipmentManufacturer = await EquipmentManufacturer.create({
     name,
     image: req.file.filename,
   });
+
+  console.log("equipmentManufacturer: ",equipmentManufacturer);
 
   res.status(200).json({
     status: "success",
@@ -35,16 +39,20 @@ exports.createEquipmentManufacturer = catchAsyncError(async (req, res, next) => 
 exports.getAllEquipmentManufacturers = catchAsyncError(async (req, res, next) => {
   const equipmentManufacturers = await EquipmentManufacturer.find();
 
+
   for (let equipmentManufacturer of equipmentManufacturers) {
-    equipmentManufacturer._doc.imageUrl = await getSignedUrl(
-      myS3Client,
-      new GetObjectCommand({
-        Bucket: process.env.BUCKET_NAME,
-        Key: equipmentManufacturer.image,
-      }),
-      { expiresIn: 3600 }
-    );
+    equipmentManufacturer._doc.imageUrl = "https://picsum.photos/id/237/200/300"
+    // await getSignedUrl(
+    //   myS3Client,
+    //   new GetObjectCommand({
+    //     Bucket: process.env.BUCKET_NAME,
+    //     Key: equipmentManufacturer.image,
+    //   }),
+    //   { expiresIn: 3600 }
+    // );
   }
+
+  console.log(equipmentManufacturers);
 
   res.status(200).json({
     status: "success",
@@ -154,7 +162,8 @@ exports.getManufacturer = catchAsyncError(async (req, res, next) => {
 
 exports.updateManufacturer = catchAsyncError(async (req, res, next) => {
   const { name } = req.body;
-  console.log(req.body);
+  console.log("updating")
+
 
   const updateObject = {
     name,

@@ -12,19 +12,20 @@ const {
 
 const myS3Client = require("../utils/myS3Client");
 const Quote = require("../models/quoteModel");
+const EquipmentType = require("../models/equipmentTypeModel");
 
 exports.createEquipmentModel = catchAsyncError(async (req, res, next) => {
   const { name, description, type, manufacturer } = req.body;
-  if (!name || !description || !type || !manufacturer || !req.file?.filename) {
-    return next(new AppError("Please enter all the required fields", 400));
-  }
+  // if (!name || !description || !type || !manufacturer || !req.file?.filename) {
+  //   return next(new AppError("Please enter all the required fields", 400));
+  // }
 
   const equipmentModel = await EquipmentModel.create({
     name,
     description,
     type,
     manufacturer,
-    image: req.file.filename,
+    image: "test",
   });
 
   res.status(200).json({
@@ -110,14 +111,16 @@ exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
   // const equipmentModels = await EquipmentModel.find();
 
   for (let equipmentModel of equipmentModels) {
-    equipmentModel._doc.imageUrl = await getSignedUrl(
-      myS3Client,
-      new GetObjectCommand({
-        Bucket: process.env.BUCKET_NAME,
-        Key: equipmentModel.image,
-      }),
-      { expiresIn: 3600 }
-    );
+    equipmentModel._doc.imageUrl = "null.png"
+    
+    // await getSignedUrl(
+    //   myS3Client,
+    //   new GetObjectCommand({
+    //     Bucket: process.env.BUCKET_NAME,
+    //     Key: equipmentModel.image,
+    //   }),
+    //   { expiresIn: 3600 }
+    // );
   }
 
   res.status(200).json({
@@ -127,6 +130,52 @@ exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
     },
   });
 });
+
+
+exports.getEquipmentModelsBasedOnType = catchAsyncError(async (req, res, next) => {
+  // Extract category ID from the request params
+  const { categoryId } = req.params;
+
+  // Construct the query with filters and populate related fields
+  const queryFunctions = new QueryFunctions(
+    EquipmentModel.find({ type: categoryId }) // Filter by category ID
+      .populate("type")
+      .populate("manufacturer"),
+    req.query
+  )
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
+
+  // Execute the query
+  let equipmentModels = await queryFunctions.query;
+
+  // Add image URL to each equipment model (default or derived from logic)
+  for (let equipmentModel of equipmentModels) {
+    equipmentModel._doc.linkTo = `/product/${equipmentModel._id}`; // Add dynamic link based on ID
+    equipmentModel._doc.imageUrl = "null.png"; // Default image URL
+    // equipmentModel._doc.imageUrl = await getSignedUrl(
+    //   myS3Client,
+    //   new GetObjectCommand({
+    //     Bucket: process.env.BUCKET_NAME,
+    //     Key: equipmentModel.image,
+    //   }),
+    //   { expiresIn: 3600 }
+    // );
+  }
+
+  console.log(equipmentModels)
+
+  // Respond with the filtered and processed data
+  res.status(200).json({
+    status: "success",
+    data: {
+      equipmentModels,
+    },
+  });
+});
+
 
 exports.getModel = catchAsyncError(async (req, res, next) => {
   const equipmentModel = await EquipmentModel.findById(req.params.equipmentModelId)
@@ -142,15 +191,16 @@ exports.getModel = catchAsyncError(async (req, res, next) => {
   }
 
   // for (let equipmentModel of equipmentModels) {
-  equipmentModel._doc.imageUrl = await getSignedUrl(
-    myS3Client,
-    new GetObjectCommand({
-      Bucket: process.env.BUCKET_NAME,
-      Key: equipmentModel.image,
-    }),
-    { expiresIn: 3600 }
-  );
+  // equipmentModel._doc.imageUrl = await getSignedUrl(
+  //   myS3Client,
+  //   new GetObjectCommand({
+  //     Bucket: process.env.BUCKET_NAME,
+  //     Key: equipmentModel.image,
+  //   }),
+  //   { expiresIn: 3600 }
+  // );
   // }
+
 
   res.status(200).json({
     status: "success",

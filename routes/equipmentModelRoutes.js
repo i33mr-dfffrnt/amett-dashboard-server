@@ -6,17 +6,22 @@ const adminController = require("../controllers/adminController");
 const router = express.Router();
 
 router.route("/search/:searchTerm").get(equipmentModelController.searchForEquipmentModels);
+
+
 router
   .route("/")
   .get(equipmentModelController.getAllEquipmentModels)
   .post(
-    adminController.requireAuth,
+    // adminController.requireAuth,
     imageController.uploadImage("image"),
     imageController.resizeImage(800, 800),
-    imageController.sendImageToS3Bucket,
+    // imageController.sendImageToS3Bucket,
     equipmentModelController.createEquipmentModel
   )
   .delete(adminController.requireAuth, equipmentModelController.deleteMultiModels);
+
+  router.get('/category/:categoryId', equipmentModelController.getEquipmentModelsBasedOnType);
+
 
 router
   .route("/:equipmentModelId")

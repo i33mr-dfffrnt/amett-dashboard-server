@@ -56,16 +56,17 @@ exports.getEquipmentType = catchAsyncError(async (req, res, next) => {
     { expiresIn: 3600 }
   );
 
-  for (let manufacturer of equipmentType._doc.listOfManufacturers) {
-    manufacturer._doc.imageUrl = await getSignedUrl(
-      myS3Client,
-      new GetObjectCommand({
-        Bucket: process.env.BUCKET_NAME,
-        Key: manufacturer.image,
-      }),
-      { expiresIn: 3600 }
-    );
-  }
+  // for (let manufacturer of equipmentType._doc.listOfManufacturers) {
+  //   manufacturer._doc.imageUrl = await getSignedUrl(
+  //     myS3Client,
+  //     new GetObjectCommand({
+  //       Bucket: process.env.BUCKET_NAME,
+  //       Key: manufacturer.image,
+  //     }),
+  //     { expiresIn: 3600 }
+  //   );
+  // }
+  console.log(equipmentType)
 
   res.status(200).json({
     status: "success",
@@ -79,14 +80,15 @@ exports.getAllEquipmentTypes = catchAsyncError(async (req, res, next) => {
   const equipmentTypes = await EquipmentType.find();
 
   for (let equipmentType of equipmentTypes) {
-    equipmentType._doc.imageUrl = await getSignedUrl(
-      myS3Client,
-      new GetObjectCommand({
-        Bucket: process.env.BUCKET_NAME,
-        Key: equipmentType.image,
-      }),
-      { expiresIn: 3600 }
-    );
+    equipmentType._doc.imageUrl = "null.png"
+    // await getSignedUrl(
+    //   myS3Client,
+    //   new GetObjectCommand({
+    //     Bucket: process.env.BUCKET_NAME,
+    //     Key: equipmentType.image,
+    //   }),
+    //   { expiresIn: 3600 }
+    // );
     const equipmentModels = await EquipmentModel.find({ type: equipmentType._id });
     equipmentType._doc.listOfManufacturers = [
       ...new Set(equipmentModels.map((model) => model.manufacturer._id.toString())),
