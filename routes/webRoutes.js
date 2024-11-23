@@ -7,16 +7,7 @@ router
   .route("/menu")
   .get(webController.getMenu)
 
-// router
-//   .route("/:equipmentModelId")
-//   .get(equipmentModelController.getModel)
-//   .patch(
-//     adminController.requireAuth,
-//     imageController.uploadImage("image"),
-//     imageController.resizeImage(800, 800),
-//     imageController.sendImageToS3Bucket,
-//     equipmentModelController.updateModel
-//   )
-//   .delete(adminController.requireAuth, equipmentModelController.deleteEquipmentModel);
-
+  router
+  .route("/featured-equipment")
+  .get(webController.getFeaturedEquipmentModels)
 module.exports = router;

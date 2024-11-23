@@ -95,7 +95,7 @@ class QueryFunctions {
       {
         $project: {
           Head: "$name",
-          headLink: { $concat: ["/products?id=", { $toString: "$_id" }] },
+          headLink: { $concat: ["/products?categoryId=", { $toString: "$_id" }] },
           sublink: {
             $map: {
               input: "$models",

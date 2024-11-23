@@ -12,7 +12,6 @@ const EquipmentType = require("../models/equipmentTypeModel");
 
 
 exports.getMenu = catchAsyncError(async (req, res, next) => {
-
   const queryFunctions = new QueryFunctions(
     EquipmentType.find(),
     req.query
@@ -28,30 +27,37 @@ exports.getMenu = catchAsyncError(async (req, res, next) => {
   const menuData = {services: equipmentTypesWithModels , equipment : equipmentTypesWithModels };
 
 
+  // console.log("menuData: ", menuData)
+
   res.status(200).json({
     status: "success",
     data: menuData,
   });
 });
 
-exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
+
+exports.getFeaturedEquipmentModels = catchAsyncError(async (req, res, next) => {
+  // Construct the query to get the latest 9 active equipment models
   const queryFunctions = new QueryFunctions(
-    EquipmentModel.find().populate("type").populate("manufacturer"),
+    EquipmentModel.find({ status: "Active" }) // Filter for active models
+      .sort({ createdAt: -1 }) // Sort by newest models first
+      .limit(9) // Limit to the latest 9 models
+      .populate("type") // Populate the "type" field
+      .populate("manufacturer"), // Populate the "manufacturer" field
     req.query
   )
     .filter()
-    .sort()
-    .limitFields()
-    .paginate();
+    .limitFields(); // No additional pagination needed for 9 items
 
-  // console.log(queryFunctions.queryString);
-  const equipmentModels = await queryFunctions.query;
-  // const equipmentModels = await EquipmentModel.find();
+  // Execute the query
+  let equipmentModels = await queryFunctions.query;
 
+  // Add image URL and dynamic link to each equipment model
   for (let equipmentModel of equipmentModels) {
-    equipmentModel._doc.imageUrl = "null.png"
-    
-    // await getSignedUrl(
+    equipmentModel._doc.linkTo = `/product/${equipmentModel._id}`; // Add dynamic link based on ID
+    equipmentModel._doc.imageUrl = "null.png"; // Default image URL
+    // Uncomment below to fetch signed URL for images from S3
+    // equipmentModel._doc.imageUrl = await getSignedUrl(
     //   myS3Client,
     //   new GetObjectCommand({
     //     Bucket: process.env.BUCKET_NAME,
@@ -61,6 +67,9 @@ exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
     // );
   }
 
+  console.log(equipmentModels);
+
+  // Respond with the filtered and processed data
   res.status(200).json({
     status: "success",
     data: {
@@ -70,37 +79,4 @@ exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
 });
 
 
-
-
-exports.getModel = catchAsyncError(async (req, res, next) => {
-  const equipmentModel = await EquipmentModel.findById(req.params.equipmentModelId)
-    .populate("type")
-    .populate("manufacturer");
-
-  if (!equipmentModel) {
-    return next(new AppError("No equipmentModel found with that ID", 404));
-  }
-
-  if (req.query.status === "Active" && equipmentModel.status === "Inactive") {
-    return next(new AppError("You can't access this auction", 401));
-  }
-
-  // for (let equipmentModel of equipmentModels) {
-  equipmentModel._doc.imageUrl = await getSignedUrl(
-    myS3Client,
-    new GetObjectCommand({
-      Bucket: process.env.BUCKET_NAME,
-      Key: equipmentModel.image,
-    }),
-    { expiresIn: 3600 }
-  );
-  // }
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      equipmentModel,
-    },
-  });
-});
 

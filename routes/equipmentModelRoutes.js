@@ -6,6 +6,8 @@ const adminController = require("../controllers/adminController");
 const router = express.Router();
 
 router.route("/search/:searchTerm").get(equipmentModelController.searchForEquipmentModels);
+
+
 router
   .route("/")
   .get(equipmentModelController.getAllEquipmentModels)
@@ -17,6 +19,9 @@ router
     equipmentModelController.createEquipmentModel
   )
   .delete(adminController.requireAuth, equipmentModelController.deleteMultiModels);
+
+  router.get('/category/:categoryId', equipmentModelController.getEquipmentModelsBasedOnType);
+
 
 router
   .route("/:equipmentModelId")
