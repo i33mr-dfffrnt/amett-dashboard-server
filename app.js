@@ -29,7 +29,7 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: true,
-    // origin: ["https://www.amett.net", "https://amett.net", "http://localhost:3000"],
+    // origin: ["https://www.amett.net", "https://amett.net"],
     credentials: true,
   })
 );
@@ -68,9 +68,9 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/auth", adminRouter);
 app.use("/web", webRouter);
-app.use("/equipment-types", equipmentTypeRouter); // collection
+app.use("/equipment-types", equipmentTypeRouter); 
 app.use("/equipment-manufacturers", equipmentManufacturerRoutes);  
-app.use("/equipment-models", equipmentModelRoutes); // product
+app.use("/equipment-models", equipmentModelRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/auctions", auctionRoutes);
 app.use("/jobs", jobRouter);
