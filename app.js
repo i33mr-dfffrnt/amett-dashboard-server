@@ -10,6 +10,7 @@ var xss = require("xss-clean");
 const hpp = require("hpp");
 
 const equipmentTypeRouter = require("./routes/equipmentTypeRoutes");
+const serviceTypeRouter = require("./routes/serviceTypeRoutes");
 const equipmentManufacturerRoutes = require("./routes/equipmentManufacturerRoutes");
 const equipmentModelRoutes = require("./routes/equipmentModelRoutes");
 const adminRouter = require("./routes/adminRoutes");
@@ -17,9 +18,10 @@ const quoteRoutes = require("./routes/quoteRoutes");
 const auctionRoutes = require("./routes/auctionRoutes");
 const jobRouter = require("./routes/jobRoutes");
 const bidRouter = require("./routes/bidRoutes");
-const serviceRouter = require("./routes/serviceRoutes");
+const serviceReqRouter = require("./routes/serviceReqRoutes");
+const servicesRouter = require("./routes/serviceRoutes");
 const empRouter = require("./routes/empRoutes");
-const webRouter  = require("./routes/webRoutes");
+const webRouter = require("./routes/webRoutes");
 
 const jobController = require("./controllers/jobController");
 
@@ -68,14 +70,17 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/auth", adminRouter);
 app.use("/web", webRouter);
-app.use("/equipment-types", equipmentTypeRouter); 
-app.use("/equipment-manufacturers", equipmentManufacturerRoutes);  
+app.use("/equipment-types", equipmentTypeRouter);
+app.use("/equipment-manufacturers", equipmentManufacturerRoutes);
 app.use("/equipment-models", equipmentModelRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/auctions", auctionRoutes);
 app.use("/jobs", jobRouter);
 app.use("/bids", bidRouter);
-app.use("/service", serviceRouter);
+app.use("/service", serviceReqRouter);
+app.use("/services", servicesRouter);
+app.use("/service-types", serviceTypeRouter);
+
 app.use("/employees", empRouter);
 
 jobController.prepareScheduledJob();
