@@ -1,118 +1,475 @@
-const Employee = require("../models/employeeModel");
-const ServiceRequest = require("../models/serviceRequestModel");
+const Service = require("../models/serviceModel");
 const AppError = require("../utils/appError");
 const catchAsyncError = require("../utils/catchAsyncError");
+const QueryFunctions = require("../utils/queryFunctions");
 
-const nodemailer = require("nodemailer");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  DeleteObjectsCommand,
+} = require("@aws-sdk/client-s3");
+
+const myS3Client = require("../utils/myS3Client");
+const ServiceType = require("../models/serviceTypeModel");
 
 exports.createService = catchAsyncError(async (req, res, next) => {
-  const { name, email, sType, dType, manufacturer, serialNo, site, location, problem, notes } =
-    req.body;
-  console.log(req.body);
-  if (
-    !name ||
-    !email ||
-    !sType ||
-    !dType ||
-    !manufacturer ||
-    !serialNo ||
-    !site ||
-    !location ||
-    !problem
-  ) {
-    return next(new AppError("Please enter all the required fields", 400));
-  }
+  const { name, description, type, manufacturer } = req.body;
+  // if (!name || !description || !type || !manufacturer || !req.file?.filename) {
+  //   return next(new AppError("Please enter all the required fields", 400));
+  // }
 
-  const serviceRequest = await ServiceRequest.create({
+  const service = await Service.create({
     name,
-    email,
-    serviceType: sType,
-    deviceType: dType,
-    deviceManufacturer: manufacturer,
-    serialNo,
-    deviceSite: site,
-    deviceLocation: location,
-    problemDescription: problem,
-    notes,
-    status: "Pending",
+    description,
+    type,
+    manufacturer,
+    image: "test",
   });
-
-  const message = `
-	Requester Name: ${name}
-	Email: ${email}
-	Service Type: ${sType}
-	Device Type: ${dType}
-	Device Manufacturer: ${manufacturer}
-	Serial Number: ${serialNo}
-	Service Site: ${site}
-	Service Location: ${location}
-	Problem: ${problem}
-	Notes: ${notes}
-	Employees link to confirm: https://www.amett.net/service/status/${serviceRequest._id}
-	-----------------------------------------------------------------------------------------
-	Please note that the content of this email is confidential. Reply to the client in a separate email.
-	`;
-
-  const employees = await Employee.find();
-  const emailStrings = employees.map((el) => {
-    return el.email;
-  });
-  const transport = nodemailer.createTransport({
-    service: "SendinBlue",
-    auth: {
-      user: "omarmohmmed0@gmail.com",
-      pass: "2mwGQvjfpTghXyqN",
-    },
-  });
-  const mailOptions = {
-    from: email,
-    to: emailStrings,
-    subject: `New Service Request: ${sType} on ${dType}`,
-    text: message,
-  };
-
-  await transport.sendMail(mailOptions);
 
   res.status(200).json({
+    status: "success",
+    data: {
+      service,
+    },
+  });
+});
+
+exports.deleteService = catchAsyncError(async (req, res, next) => {
+  const service = await Service.findByIdAndDelete(req.params.serviceId);
+
+  if (!service) {
+    return next(new AppError("No service found with that ID", 404));
+  }
+
+  const deleteParams = {
+    Bucket: process.env.BUCKET_NAME,
+    Key: service.image,
+  };
+
+  await myS3Client.send(new DeleteObjectCommand(deleteParams));
+
+  res.status(204).json({
     status: "success",
     data: null,
   });
 });
 
-exports.getServiceRequest = catchAsyncError(async (req, res, next) => {
-  const serviceRequest = await ServiceRequest.findById(req.params.serviceId).populate(
-    "assignedEmployee"
-  );
+exports.deleteMultiServices = catchAsyncError(async (req, res, next) => {
+  const { deleteArray } = req.body;
 
-  if (!serviceRequest) {
-    return next(new AppError("No serviceRequest found with that ID", 404));
+  const services = await Service.find({ _id: { $in: deleteArray } });
+
+  if (!services.length) {
+    return next(new AppError("No services found with that ID", 404));
   }
+
+  const deleteDocs = await Service.deleteMany({ _id: { $in: deleteArray } });
+
+  const imagesToDelete = services.map((option) => {
+    return {
+      Key: option.image,
+    };
+  });
+
+  if (services.length) {
+    deleteParams = {
+      Bucket: process.env.BUCKET_NAME,
+      Delete: {
+        Objects: imagesToDelete,
+      },
+    };
+
+    await myS3Client.send(new DeleteObjectsCommand(deleteParams));
+  }
+  // await myS3Client.send(new DeleteObjectCommand(deleteParams));
+
+  res.status(204).json({
+    status: "success",
+    data: null,
+  });
+});
+
+exports.getAllServices = catchAsyncError(async (req, res, next) => {
+  const queryFunctions = new QueryFunctions(Service.find().populate("type"), req.query)
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
+
+  // console.log(queryFunctions.queryString);
+  const services = await queryFunctions.query;
+  // const services = await Service.find();
+
+  for (let service of services) {
+    service._doc.imageUrl = "null.png";
+
+    // await getSignedUrl(
+    //   myS3Client,
+    //   new GetObjectCommand({
+    //     Bucket: process.env.BUCKET_NAME,
+    //     Key: service.image,
+    //   }),
+    //   { expiresIn: 3600 }
+    // );
+  }
+  console.log("services", services);
 
   res.status(200).json({
     status: "success",
     data: {
-      serviceRequest,
+      services,
     },
   });
 });
 
-exports.acceptService = catchAsyncError(async (req, res, next) => {
-  const serviceRequest = await ServiceRequest.findById(req.params.serviceId);
+exports.getServicesBasedOnType = catchAsyncError(async (req, res, next) => {
+  // Extract category ID from the request params
+  const { categoryId } = req.params;
 
-  const { assignedEmp } = req.body;
-  if (!serviceRequest) {
-    return next(new AppError("No serviceRequest found with that ID", 404));
+  // Construct the query with filters and populate related fields
+  const queryFunctions = new QueryFunctions(
+    Service.find({ type: categoryId }) // Filter by category ID
+      .populate("type"),
+    req.query
+  )
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
+
+  // Execute the query
+  let services = await queryFunctions.query;
+
+  // Add image URL to each equipment model (default or derived from logic)
+  for (let service of services) {
+    service._doc.linkTo = `/product/${service._id}`; // Add dynamic link based on ID
+    service._doc.imageUrl = "null.png"; // Default image URL
+    // service._doc.imageUrl = await getSignedUrl(
+    //   myS3Client,
+    //   new GetObjectCommand({
+    //     Bucket: process.env.BUCKET_NAME,
+    //     Key: service.image,
+    //   }),
+    //   { expiresIn: 3600 }
+    // );
   }
 
-  serviceRequest.status = "Accepted";
-  serviceRequest.assignedEmployee = assignedEmp;
+  console.log(services);
 
-  serviceRequest.save();
+  // Respond with the filtered and processed data
+  res.status(200).json({
+    status: "success",
+    data: {
+      services,
+    },
+  });
+});
+
+exports.getService = catchAsyncError(async (req, res, next) => {
+  const service = await Service.findById(req.params.serviceId).populate("type");
+
+  if (!service) {
+    return next(new AppError("No service found with that ID", 404));
+  }
+
+  if (req.query.status === "Active" && service.status === "Inactive") {
+    return next(new AppError("You can't access this auction", 401));
+  }
+
+  // for (let service of services) {
+  // service._doc.imageUrl = await getSignedUrl(
+  //   myS3Client,
+  //   new GetObjectCommand({
+  //     Bucket: process.env.BUCKET_NAME,
+  //     Key: service.image,
+  //   }),
+  //   { expiresIn: 3600 }
+  // );
+  // }
 
   res.status(200).json({
     status: "success",
     data: {
-      serviceRequest,
+      service,
+    },
+  });
+});
+
+exports.updateService = catchAsyncError(async (req, res, next) => {
+  const { name, description, type, manufacturer, status } = req.body;
+  console.log("update service", req.body);
+
+  const updateObject = {
+    name,
+    description,
+    type,
+    manufacturer,
+    status,
+  };
+
+  if (req.file) {
+    updateObject.image = req.file.filename;
+    // consider deleting old image if new image was uploaded
+  }
+
+  const service = await Service.findByIdAndUpdate(req.params.serviceId, updateObject, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!service) {
+    return next(new AppError("No service found with that ID", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      service,
+    },
+  });
+});
+
+exports.searchForServices = catchAsyncError(async (req, res, next) => {
+  const { searchTerm } = req.params;
+
+  console.log(searchTerm);
+  let services = await Service.aggregate([
+    {
+      $lookup: {
+        from: "equipmenttypes",
+        localField: "type",
+        foreignField: "_id",
+        as: "type",
+      },
+    },
+    {
+      $unwind: "$type",
+    },
+    {
+      $lookup: {
+        from: "equipmentmanufacturers",
+        localField: "manufacturer",
+        foreignField: "_id",
+        as: "manufacturer",
+      },
+    },
+    {
+      $unwind: "$manufacturer",
+    },
+    {
+      $match: {
+        $or: [
+          { name: { $regex: searchTerm, $options: "i" } },
+          { description: { $regex: searchTerm, $options: "i" } },
+          { "type.name": { $regex: searchTerm, $options: "i" } },
+          { "manufacturer.name": { $regex: searchTerm, $options: "i" } },
+        ],
+      },
+    },
+  ]);
+
+  // let services = await Service.aggregate([
+  //   {
+  //     $search: {
+  //       compound: {
+  //         should: [
+  //           {
+  //             text: {
+  //               query: searchTerm,
+  //               path: ["name", "description"],
+  //               score: {
+  //                 boost: {
+  //                   value: 1,
+  //                 },
+  //               },
+  //               fuzzy: {
+  //                 maxEdits: 2,
+  //               },
+  //             },
+  //           },
+  //         ],
+  //       },
+  //     },
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "equipmenttypes",
+  //       localField: "type",
+  //       foreignField: "_id",
+  //       as: "type",
+  //       pipeline: [
+  //         {
+  //           $search: {
+  //             index: "myIndex",
+  //             compound: {
+  //               should: [
+  //                 {
+  //                   text: {
+  //                     query: searchTerm,
+  //                     path: "name",
+  //                     score: {
+  //                       boost: {
+  //                         value: 1,
+  //                       },
+  //                     },
+  //                     fuzzy: {
+  //                       maxEdits: 2,
+  //                     },
+  //                   },
+  //                 },
+  //               ],
+  //             },
+  //           },
+  //         },
+  //       ],
+  //     },
+  //   },
+  //   {
+  //     $unwind: "$type",
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "equipmentmanufacturers",
+  //       localField: "manufacturer",
+  //       foreignField: "_id",
+  //       as: "manufacturer",
+  //       pipeline: [
+  //         {
+  //           $search: {
+  //             index: "myIndex",
+  //             compound: {
+  //               should: [
+  //                 {
+  //                   text: {
+  //                     query: searchTerm,
+  //                     path: "name",
+  //                     score: {
+  //                       boost: {
+  //                         value: 1,
+  //                       },
+  //                     },
+  //                     fuzzy: {
+  //                       maxEdits: 2,
+  //                     },
+  //                   },
+  //                 },
+  //               ],
+  //             },
+  //           },
+  //         },
+  //       ],
+  //     },
+  //   },
+  //   {
+  //     $unwind: "$manufacturer",
+  //   },
+  // ]);
+
+  // let services = await Service.aggregate([
+  //   {
+  //     $search: {
+  //       index: "default",
+  //       compound: {
+  //         should: [
+  //           {
+  //             text: {
+  //               query: searchTerm,
+  //               path: ["name", "description", "type.name", "manufacturer.name"],
+  //               score: {
+  //                 boost: {
+  //                   value: 1,
+  //                 },
+  //               },
+  //               fuzzy: {
+  //                 maxEdits: 2,
+  //               },
+  //             },
+  //           },
+  //         ],
+  //       },
+  //     },
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "equipmenttypes",
+  //       localField: "type",
+  //       foreignField: "_id",
+  //       as: "type",
+  //     },
+  //   },
+  //   {
+  //     $unwind: "$type",
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "equipmentmanufacturers",
+  //       localField: "manufacturer",
+  //       foreignField: "_id",
+  //       as: "manufacturer",
+  //     },
+  //   },
+  //   {
+  //     $unwind: "$manufacturer",
+  //   },
+  // ]);
+  // let services = await Service.aggregate([
+  //   {
+  //     $search: {
+  //       compound: {
+  //         should: [
+  //           {
+  //             text: {
+  //               query: searchTerm,
+  //               path: "name",
+  //               score: {
+  //                 boost: {
+  //                   value: 1,
+  //                 },
+  //               },
+  //               fuzzy: {
+  //                 maxEdits: 2,
+  //               },
+  //             },
+  //           },
+  //           {
+  //             text: {
+  //               query: searchTerm,
+  //               path: "description",
+  //               fuzzy: {
+  //                 maxEdits: 2,
+  //               },
+  //             },
+  //           },
+  //         ],
+  //       },
+  //     },
+  //   },
+  //   // {
+  //   //   $addFields: {
+  //   //     score: {
+  //   //       $meta: "searchScore",
+  //   //     },
+  //   //   },
+  //   // },
+  // ]);
+
+  for (let service of services) {
+    service.imageUrl = await getSignedUrl(
+      myS3Client,
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: service.image,
+      }),
+      { expiresIn: 3600 }
+    );
+  }
+
+  res.status(200).json({
+    status: "success",
+    results: services.length,
+    data: {
+      services,
     },
   });
 });
