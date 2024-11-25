@@ -14,7 +14,7 @@ const myS3Client = require("../utils/myS3Client");
 const ServiceType = require("../models/serviceTypeModel");
 
 exports.createService = catchAsyncError(async (req, res, next) => {
-  const { name, description, type, manufacturer } = req.body;
+  const { name, description, type } = req.body;
   // if (!name || !description || !type || !manufacturer || !req.file?.filename) {
   //   return next(new AppError("Please enter all the required fields", 400));
   // }
@@ -23,7 +23,6 @@ exports.createService = catchAsyncError(async (req, res, next) => {
     name,
     description,
     type,
-    manufacturer,
     image: "test",
   });
 
@@ -143,7 +142,7 @@ exports.getServicesBasedOnType = catchAsyncError(async (req, res, next) => {
 
   // Add image URL to each equipment model (default or derived from logic)
   for (let service of services) {
-    service._doc.linkTo = `/product/${service._id}`; // Add dynamic link based on ID
+    service._doc.linkTo = `/service/${service._id}`; // Add dynamic link based on ID
     service._doc.imageUrl = "null.png"; // Default image URL
     // service._doc.imageUrl = await getSignedUrl(
     //   myS3Client,
@@ -197,14 +196,13 @@ exports.getService = catchAsyncError(async (req, res, next) => {
 });
 
 exports.updateService = catchAsyncError(async (req, res, next) => {
-  const { name, description, type, manufacturer, status } = req.body;
+  const { name, description, type, status } = req.body;
   console.log("update service", req.body);
 
   const updateObject = {
     name,
     description,
     type,
-    manufacturer,
     status,
   };
 
@@ -237,7 +235,7 @@ exports.searchForServices = catchAsyncError(async (req, res, next) => {
   let services = await Service.aggregate([
     {
       $lookup: {
-        from: "equipmenttypes",
+        from: "servicetypes",
         localField: "type",
         foreignField: "_id",
         as: "type",
@@ -247,23 +245,11 @@ exports.searchForServices = catchAsyncError(async (req, res, next) => {
       $unwind: "$type",
     },
     {
-      $lookup: {
-        from: "equipmentmanufacturers",
-        localField: "manufacturer",
-        foreignField: "_id",
-        as: "manufacturer",
-      },
-    },
-    {
-      $unwind: "$manufacturer",
-    },
-    {
       $match: {
         $or: [
           { name: { $regex: searchTerm, $options: "i" } },
           { description: { $regex: searchTerm, $options: "i" } },
           { "type.name": { $regex: searchTerm, $options: "i" } },
-          { "manufacturer.name": { $regex: searchTerm, $options: "i" } },
         ],
       },
     },
