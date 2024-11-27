@@ -56,16 +56,14 @@ exports.getFeaturedEquipmentModels = catchAsyncError(async (req, res, next) => {
   // Add image URL and dynamic link to each equipment model
   for (let equipmentModel of equipmentModels) {
     equipmentModel._doc.linkTo = `/product/${equipmentModel._id}`; // Add dynamic link based on ID
-    equipmentModel._doc.imageUrl = "null.png"; // Default image URL
-    // Uncomment below to fetch signed URL for images from S3
-    // equipmentModel._doc.imageUrl = await getSignedUrl(
-    //   myS3Client,
-    //   new GetObjectCommand({
-    //     Bucket: process.env.BUCKET_NAME,
-    //     Key: equipmentModel.image,
-    //   }),
-    //   { expiresIn: 3600 }
-    // );
+    equipmentModel._doc.imageUrl = await getSignedUrl(
+      myS3Client,
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: equipmentModel.image,
+      }),
+      { expiresIn: 3600 }
+    );
   }
 
   console.log(equipmentModels);
@@ -100,19 +98,15 @@ exports.getFeaturedServices = catchAsyncError(async (req, res, next) => {
   // Add image URL and dynamic link to each service
   for (let service of services) {
     service._doc.linkTo = `/service/${service._id}`; // Add dynamic link based on ID
-    service._doc.imageUrl = "null.png"; // Default image URL
-    // Uncomment below to fetch signed URL for images from S3
-    // service._doc.imageUrl = await getSignedUrl(
-    //   myS3Client,
-    //   new GetObjectCommand({
-    //     Bucket: process.env.BUCKET_NAME,
-    //     Key: service.image,
-    //   }),
-    //   { expiresIn: 3600 }
-    // );
+    service._doc.imageUrl = await getSignedUrl(
+      myS3Client,
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: service.image,
+      }),
+      { expiresIn: 3600 }
+    );
   }
-
-  console.log(services);
 
   // Respond with the filtered and processed data
   res.status(200).json({

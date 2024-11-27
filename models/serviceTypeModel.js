@@ -9,17 +9,6 @@ const serviceTypeSchema = mongoose.Schema(
       type: String,
       required: [true, "A ServiceType must have a name"],
     },
-
-    // Remove this list, replace it with getting types where model.manuID = selectedManu.id.
-    // listOfManufacturers: {
-    //   type: [mongoose.Schema.ObjectId],
-    //   ref: "EquipmentManufacturer",
-    // },
-    image: {
-      type: String,
-      required: [true, "ServiceType must have an image"],
-      trim: true,
-    },
   },
   { timestamps: true }
 );

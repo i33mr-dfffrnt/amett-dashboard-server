@@ -37,8 +37,6 @@ app.use(
   })
 );
 
-
-
 app.use(express.json({}));
 
 // Add the headers middleware
@@ -76,7 +74,7 @@ app.use("/web", webRouter);
 app.use("/equipment-types", equipmentTypeRouter);
 app.use("/equipment-manufacturers", equipmentManufacturerRoutes);
 app.use("/equipment-models", equipmentModelRoutes);
-app.use("/requests",requestRoutes);
+app.use("/requests", requestRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/auctions", auctionRoutes);
 app.use("/jobs", jobRouter);

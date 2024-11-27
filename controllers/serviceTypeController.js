@@ -14,14 +14,15 @@ const myS3Client = require("../utils/myS3Client");
 const Quote = require("../models/quoteModel");
 
 exports.createServiceType = catchAsyncError(async (req, res, next) => {
+  console.log("creating service type");
+
   const { name } = req.body;
-  if (!name || !req.file?.filename) {
+  if (!name) {
     return next(new AppError("Please enter all the required fields", 400));
   }
 
   const serviceType = await ServiceType.create({
     name,
-    image: req.file.filename,
   });
 
   res.status(200).json({
@@ -33,7 +34,10 @@ exports.createServiceType = catchAsyncError(async (req, res, next) => {
 });
 
 exports.getServiceType = catchAsyncError(async (req, res, next) => {
+  console.log("gettign service type", req.params.serviceTypeId);
+
   const serviceType = await ServiceType.findById(req.params.serviceTypeId);
+  console.log("here", serviceType);
 
   if (!serviceType) {
     return next(new AppError("No serviceType found with that ID", 404));
@@ -42,29 +46,7 @@ exports.getServiceType = catchAsyncError(async (req, res, next) => {
   if (req.query.status === "Active") {
     options.status = "Active";
   }
-  const services = await Service.find(options);
-  serviceType._doc.listOfManufacturers = [...new Set(services.map((model) => model.manufacturer))];
-
-  serviceType._doc.imageUrl = await getSignedUrl(
-    myS3Client,
-    new GetObjectCommand({
-      Bucket: process.env.BUCKET_NAME,
-      Key: serviceType.image,
-    }),
-    { expiresIn: 3600 }
-  );
-
-  // for (let manufacturer of serviceType._doc.listOfManufacturers) {
-  //   manufacturer._doc.imageUrl = await getSignedUrl(
-  //     myS3Client,
-  //     new GetObjectCommand({
-  //       Bucket: process.env.BUCKET_NAME,
-  //       Key: manufacturer.image,
-  //     }),
-  //     { expiresIn: 3600 }
-  //   );
-  // }
-  console.log(serviceType);
+  console.log("here");
 
   res.status(200).json({
     status: "success",
@@ -76,22 +58,6 @@ exports.getServiceType = catchAsyncError(async (req, res, next) => {
 
 exports.getAllServiceTypes = catchAsyncError(async (req, res, next) => {
   const serviceTypes = await ServiceType.find();
-
-  // for (let serviceType of serviceTypes) {
-  //   serviceType._doc.imageUrl = "null.png";
-  //   // await getSignedUrl(
-  //   //   myS3Client,
-  //   //   new GetObjectCommand({
-  //   //     Bucket: process.env.BUCKET_NAME,
-  //   //     Key: serviceType.image,
-  //   //   }),
-  //   //   { expiresIn: 3600 }
-  //   // );
-  //   const services = await Service.find({ type: serviceType._id });
-  //   serviceType._doc.listOfManufacturers = [
-  //     ...new Set(services.map((model) => model.manufacturer._id.toString())),
-  //   ];
-  // }
 
   res.status(200).json({
     status: "success",
