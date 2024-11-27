@@ -16,16 +16,16 @@ const EquipmentType = require("../models/equipmentTypeModel");
 
 exports.createEquipmentModel = catchAsyncError(async (req, res, next) => {
   const { name, description, type, manufacturer } = req.body;
-  // if (!name || !description || !type || !manufacturer || !req.file?.filename) {
-  //   return next(new AppError("Please enter all the required fields", 400));
-  // }
+  if (!name || !description || !type || !req.file?.filename) {
+    return next(new AppError("Please enter all the required fields", 400));
+  }
 
   const equipmentModel = await EquipmentModel.create({
     name,
     description,
     type,
     manufacturer,
-    image: "test",
+    image: req.file.filename,
   });
 
   res.status(200).json({
@@ -111,16 +111,14 @@ exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
   // const equipmentModels = await EquipmentModel.find();
 
   for (let equipmentModel of equipmentModels) {
-    equipmentModel._doc.imageUrl = "null.png"
-    
-    // await getSignedUrl(
-    //   myS3Client,
-    //   new GetObjectCommand({
-    //     Bucket: process.env.BUCKET_NAME,
-    //     Key: equipmentModel.image,
-    //   }),
-    //   { expiresIn: 3600 }
-    // );
+    equipmentModel._doc.imageUrl = await getSignedUrl(
+      myS3Client,
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: equipmentModel.image,
+      }),
+      { expiresIn: 3600 }
+    );
   }
 
   res.status(200).json({
@@ -130,7 +128,6 @@ exports.getAllEquipmentModels = catchAsyncError(async (req, res, next) => {
     },
   });
 });
-
 
 exports.getEquipmentModelsBasedOnType = catchAsyncError(async (req, res, next) => {
   // Extract category ID from the request params
@@ -154,18 +151,17 @@ exports.getEquipmentModelsBasedOnType = catchAsyncError(async (req, res, next) =
   // Add image URL to each equipment model (default or derived from logic)
   for (let equipmentModel of equipmentModels) {
     equipmentModel._doc.linkTo = `/product/${equipmentModel._id}`; // Add dynamic link based on ID
-    equipmentModel._doc.imageUrl = "null.png"; // Default image URL
-    // equipmentModel._doc.imageUrl = await getSignedUrl(
-    //   myS3Client,
-    //   new GetObjectCommand({
-    //     Bucket: process.env.BUCKET_NAME,
-    //     Key: equipmentModel.image,
-    //   }),
-    //   { expiresIn: 3600 }
-    // );
+    equipmentModel._doc.imageUrl = await getSignedUrl(
+      myS3Client,
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: equipmentModel.image,
+      }),
+      { expiresIn: 3600 }
+    );
   }
 
-  console.log(equipmentModels)
+  console.log(equipmentModels);
 
   // Respond with the filtered and processed data
   res.status(200).json({
@@ -175,7 +171,6 @@ exports.getEquipmentModelsBasedOnType = catchAsyncError(async (req, res, next) =
     },
   });
 });
-
 
 exports.getModel = catchAsyncError(async (req, res, next) => {
   const equipmentModel = await EquipmentModel.findById(req.params.equipmentModelId)
@@ -190,17 +185,14 @@ exports.getModel = catchAsyncError(async (req, res, next) => {
     return next(new AppError("You can't access this auction", 401));
   }
 
-  // for (let equipmentModel of equipmentModels) {
-  // equipmentModel._doc.imageUrl = await getSignedUrl(
-  //   myS3Client,
-  //   new GetObjectCommand({
-  //     Bucket: process.env.BUCKET_NAME,
-  //     Key: equipmentModel.image,
-  //   }),
-  //   { expiresIn: 3600 }
-  // );
-  // }
-
+  equipmentModel._doc.imageUrl = await getSignedUrl(
+    myS3Client,
+    new GetObjectCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Key: equipmentModel.image,
+    }),
+    { expiresIn: 3600 }
+  );
 
   res.status(200).json({
     status: "success",
@@ -212,7 +204,7 @@ exports.getModel = catchAsyncError(async (req, res, next) => {
 
 exports.updateModel = catchAsyncError(async (req, res, next) => {
   const { name, description, type, manufacturer, status } = req.body;
-  console.log(req.body);
+  console.log("updating model", req.body);
 
   const updateObject = {
     name,

@@ -11,10 +11,10 @@ router
   .route("/")
   .get(serviceController.getAllServices)
   .post(
-    // adminController.requireAuth,
+    adminController.requireAuth,
     imageController.uploadImage("image"),
     imageController.resizeImage(800, 800),
-    // imageController.sendImageToS3Bucket,
+    imageController.sendImageToS3Bucket,
     serviceController.createService
   )
   .delete(adminController.requireAuth, serviceController.deleteMultiServices);
@@ -25,10 +25,10 @@ router
   .route("/:serviceId")
   .get(serviceController.getService)
   .patch(
-    // adminController.requireAuth,
-    // imageController.uploadImage("image"),
-    // imageController.resizeImage(800, 800),
-    // imageController.sendImageToS3Bucket,
+    adminController.requireAuth,
+    imageController.uploadImage("image"),
+    imageController.resizeImage(800, 800),
+    imageController.sendImageToS3Bucket,
     serviceController.updateService
   )
   .delete(adminController.requireAuth, serviceController.deleteService);

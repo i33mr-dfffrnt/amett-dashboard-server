@@ -15,15 +15,15 @@ const ServiceType = require("../models/serviceTypeModel");
 
 exports.createService = catchAsyncError(async (req, res, next) => {
   const { name, description, type } = req.body;
-  // if (!name || !description || !type || !manufacturer || !req.file?.filename) {
-  //   return next(new AppError("Please enter all the required fields", 400));
-  // }
+  if (!name || !description || !type || !req.file?.filename) {
+    return next(new AppError("Please enter all the required fields", 400));
+  }
 
   const service = await Service.create({
     name,
     description,
     type,
-    image: "test",
+    image: req.file.filename,
   });
 
   res.status(200).json({
@@ -101,16 +101,14 @@ exports.getAllServices = catchAsyncError(async (req, res, next) => {
   // const services = await Service.find();
 
   for (let service of services) {
-    service._doc.imageUrl = "null.png";
-
-    // await getSignedUrl(
-    //   myS3Client,
-    //   new GetObjectCommand({
-    //     Bucket: process.env.BUCKET_NAME,
-    //     Key: service.image,
-    //   }),
-    //   { expiresIn: 3600 }
-    // );
+    service._doc.imageUrl = await getSignedUrl(
+      myS3Client,
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: service.image,
+      }),
+      { expiresIn: 3600 }
+    );
   }
   console.log("services", services);
 
@@ -143,15 +141,14 @@ exports.getServicesBasedOnType = catchAsyncError(async (req, res, next) => {
   // Add image URL to each equipment model (default or derived from logic)
   for (let service of services) {
     service._doc.linkTo = `/service/${service._id}`; // Add dynamic link based on ID
-    service._doc.imageUrl = "null.png"; // Default image URL
-    // service._doc.imageUrl = await getSignedUrl(
-    //   myS3Client,
-    //   new GetObjectCommand({
-    //     Bucket: process.env.BUCKET_NAME,
-    //     Key: service.image,
-    //   }),
-    //   { expiresIn: 3600 }
-    // );
+    service._doc.imageUrl = await getSignedUrl(
+      myS3Client,
+      new GetObjectCommand({
+        Bucket: process.env.BUCKET_NAME,
+        Key: service.image,
+      }),
+      { expiresIn: 3600 }
+    );
   }
 
   console.log(services);
@@ -168,6 +165,8 @@ exports.getServicesBasedOnType = catchAsyncError(async (req, res, next) => {
 exports.getService = catchAsyncError(async (req, res, next) => {
   const service = await Service.findById(req.params.serviceId).populate("type");
 
+  console.log("service", service);
+
   if (!service) {
     return next(new AppError("No service found with that ID", 404));
   }
@@ -176,16 +175,15 @@ exports.getService = catchAsyncError(async (req, res, next) => {
     return next(new AppError("You can't access this auction", 401));
   }
 
-  // for (let service of services) {
-  // service._doc.imageUrl = await getSignedUrl(
-  //   myS3Client,
-  //   new GetObjectCommand({
-  //     Bucket: process.env.BUCKET_NAME,
-  //     Key: service.image,
-  //   }),
-  //   { expiresIn: 3600 }
-  // );
-  // }
+  service._doc.imageUrl = await getSignedUrl(
+    myS3Client,
+    new GetObjectCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Key: service.image,
+    }),
+    { expiresIn: 3600 }
+  );
+  console.log(service._doc.imageUrl);
 
   res.status(200).json({
     status: "success",

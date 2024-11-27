@@ -80,6 +80,8 @@ exports.resizeImage = (width = 1200, height = 700, fitInside = false) =>
   });
 
 exports.sendImageToS3Bucket = catchAsyncError(async (req, res, next) => {
+  console.log("processing image");
+
   if (!req.file) return next();
 
   const params = {

@@ -14,24 +14,35 @@ const signJWT = (id) =>
   });
 
 const createAndSendJWT = (admin, statusCode, res, origin) => {
-  console.log("admin", admin);
+  console.log("admin12", admin);
   const token = signJWT(admin._id);
+  console.log(token);
 
-  console.log(origin);
+  console.log("origin", origin);
 
   // Remove the password from the output
   admin.password = undefined;
 
-  // TODO:Add Secure after deployment
   // res.cookie("jwt", token, { httpOnly: true, secure: true });
   // res.cookie("jwt", token, { httpOnly: true, secure: true, domain: "amett.net", path: "/" });
+
+  // res.cookie("jwt", token, {
+  //   httpOnly: true,
+  //   secure: true,
+  //   sameSite: "None",
+  //   domain: origin === "https://amett.net" ? "amett.net" : "www.amett.net",
+  //   path: "/",
+  // });
+
+  // TODO:Add Secure after deployment
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    domain: origin === "https://amett.net" ? "amett.net" : "www.amett.net",
+    sameSite: "Lax",
     path: "/",
   });
+
+  console.log("set cookies");
+
   res.status(statusCode).json({
     status: "success",
     data: null,
@@ -115,6 +126,8 @@ exports.requireAuth = catchAsyncError(async (req, res, next) => {
 });
 
 exports.checkRouteAuth = catchAsyncError(async (req, res, next) => {
+  console.log("/auth/checkAuth");
+
   // Get the token from the authorization header
   let token;
   // if (req.headers.authorization) {
@@ -122,7 +135,9 @@ exports.checkRouteAuth = catchAsyncError(async (req, res, next) => {
   // }
   if (req.cookies.jwt) {
     token = req.cookies.jwt;
+    console.log("req.cookies.jwt", token);
   }
+
   if (!token) {
     return next(new AppError("You aren't logged in, please log in to get access", 401));
   }
@@ -135,6 +150,7 @@ exports.checkRouteAuth = catchAsyncError(async (req, res, next) => {
   if (!admin) {
     return next(new AppError("The user belonging to this token does no longer exist. ", 401));
   }
+  console.log("ADMIN", admin);
 
   // Check if user changed password after the token was issued
   // if user changed the password after the token was issued, send an error
@@ -162,14 +178,20 @@ exports.temp = catchAsyncError(async (req, res, next) => {
 });
 
 exports.logout = catchAsyncError(async (req, res, next) => {
+  // res.cookie("jwt", "", {
+  //   httpOnly: true,
+  //   secure: true,
+  //   sameSite: "None",
+  //   domain: req.get("origin") === "https://amett.net" ? "amett.net" : "www.amett.net",
+  //   path: "/",
+  // });
+
+  // TODO:Add Secure after deployment
   res.cookie("jwt", "", {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
-    domain: req.get("origin") === "https://amett.net" ? "amett.net" : "www.amett.net",
+    sameSite: "Lax",
     path: "/",
   });
-
   res.status(200).json({
     status: "success",
     data: null,
