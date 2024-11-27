@@ -13,6 +13,7 @@ const equipmentTypeRouter = require("./routes/equipmentTypeRoutes");
 const serviceTypeRouter = require("./routes/serviceTypeRoutes");
 const equipmentManufacturerRoutes = require("./routes/equipmentManufacturerRoutes");
 const equipmentModelRoutes = require("./routes/equipmentModelRoutes");
+const requestRoutes = require("./routes/requestRoutes");
 const adminRouter = require("./routes/adminRoutes");
 const quoteRoutes = require("./routes/quoteRoutes");
 const auctionRoutes = require("./routes/auctionRoutes");
@@ -35,6 +36,8 @@ app.use(
     credentials: true,
   })
 );
+
+
 
 app.use(express.json({}));
 
@@ -73,6 +76,7 @@ app.use("/web", webRouter);
 app.use("/equipment-types", equipmentTypeRouter);
 app.use("/equipment-manufacturers", equipmentManufacturerRoutes);
 app.use("/equipment-models", equipmentModelRoutes);
+app.use("/requests",requestRoutes);
 app.use("/quotes", quoteRoutes);
 app.use("/auctions", auctionRoutes);
 app.use("/jobs", jobRouter);
